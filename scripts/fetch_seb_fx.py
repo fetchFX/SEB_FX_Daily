@@ -1,4 +1,4 @@
-scripts/fetch_seb_fx.py
+
 import os, json, csv, datetime, zoneinfo
 import urllib.request
 
