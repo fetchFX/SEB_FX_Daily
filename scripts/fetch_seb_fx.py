@@ -52,8 +52,9 @@ for r in spot_list[0]["fx_spot_mid_exchange_rates"]:
         "unit_currency": unit,
     })
 
-# === Skriv CSV (skriv om filen varje gång) ===
-csv_path = "fx_rates_sek.csv"
+# === Skriv ny CSV med datum i filnamnet ===
+today_str = datetime.datetime.now().strftime("%Y%m%d")
+csv_path = f"fx_rates_sek_{today_str}.csv"
 
 with open(csv_path, "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(
@@ -70,10 +71,9 @@ with open(csv_path, "w", newline="", encoding="utf-8") as f:
     )
     writer.writeheader()
     for row in rows:
-        # säkerställ att alla kolumner finns
         for key in writer.fieldnames:
             if key not in row:
                 row[key] = ""
         writer.writerow(row)
 
-print(f"Wrote {len(rows)} rows to {csv_path} with new schema")
+print(f"Wrote {len(rows)} rows to {csv_path}")
