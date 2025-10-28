@@ -29,25 +29,27 @@ retrieval_date_utc = spot_list[0]["retrieval_date"]  # Ex: 2025-10-15T15:00:00Z
 
 rows = []
 for r in spot_list[0]["fx_spot_mid_exchange_rates"]:
-    listed = r["listed_currency"]
-    ex = r["exchange_rate"]
+    listed = r.get("listed_currency", "")
+    mid = r.get("exchange_rate", "")
+    bid = r.get("bid_rate", "")
+    offer = r.get("offer_rate", "")
+    last_updated = r.get("last_updated_time", "")
 
-    # SEB skickar ibland tal *1000 -> dela vid behov
-    ex = float(ex) / 1000.0
-
-    last_updated_utc = r["last_updated_time"]  # ISO 8601 UTC
-
-    # Konvertera UTC -> svensk tid
-    dt_utc = datetime.datetime.fromisoformat(last_updated_utc.replace("Z", "+00:00"))
-    dt_se = dt_utc.astimezone(zoneinfo.ZoneInfo("Europe/Stockholm"))
+    # Konvertera numeriska fält om möjligt
+    def safe_float(v):
+        try:
+            return float(v) / 1000.0 if float(v) > 100 else float(v)
+        except Exception:
+            return ""
 
     rows.append({
         "retrieval_date": retrieval_date_utc,
         "listed_currency": listed,
-        "exchange_rate": f"{ex:.6f}",
+        "exchange_rate": f"{safe_float(mid):.6f}" if mid else "",
+        "bid_rate": f"{safe_float(bid):.6f}" if bid else "",
+        "offer_rate": f"{safe_float(offer):.6f}" if offer else "",
+        "last_updated_time": last_updated,
         "unit_currency": unit,
-        "last_updated_time_utc": last_updated_utc,
-        "last_updated_time_se": dt_se.strftime("%Y-%m-%d %H:%M:%S")
     })
 
 # === Skriv/uppdatera CSV ===
@@ -61,15 +63,18 @@ with open(csv_path, "a", newline="", encoding="utf-8") as f:
             "retrieval_date",
             "listed_currency",
             "exchange_rate",
+            "bid_rate",
+            "offer_rate",
+            "last_updated_time",
             "unit_currency",
-            "last_updated_time_utc",
-            "last_updated_time_se",
         ],
     )
     if not file_exists:
         writer.writeheader()
     for row in rows:
+        for key in writer.fieldnames:
+            if key not in row:
+                row[key] = ""  # säkerställ att kolumnen finns
         writer.writerow(row)
 
 print(f"Wrote {len(rows)} rows to {csv_path}")
-  
