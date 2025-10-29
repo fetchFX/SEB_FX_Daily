@@ -3,6 +3,8 @@ from datetime import datetime
 import csv
 import requests
 from bs4 import BeautifulSoup
+import os
+import pandas as pd
 
 URL = "https://seb.se/marknaden-och-kurslistor/valutakurser-avistakurser"
 TARGET_COUNTRIES = {"Euro", "Storbritannien", "USA"}  # exakt som på sidan
@@ -58,8 +60,9 @@ def main():
     now_se = datetime.now(TZ)
     yyyymmdd = now_se.strftime("%Y%m%d")
     filename = f"SEB_Avista_{yyyymmdd}.csv"
+    history_file = "SEB_Avista_History.csv"
 
-    # Skriv CSV (idempotent: skriv om samma fil om jobbet körs igen samma dag)
+    # Skriv dagens CSV
     with open(filename, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
         w.writerow(["Land", "Valuta", "Köpkurs", "Säljkurs", "Datum", "LoadDate"])
@@ -73,7 +76,17 @@ def main():
                 now_se.strftime("%Y-%m-%d %H:%M")
             ])
 
-    print(f"Wrote {filename} with {len(rows_out)} rows.")
+    # Lägg till i historikfilen (utan dubbletter)
+    df_new = pd.read_csv(filename)
+    if os.path.exists(history_file):
+        df_hist = pd.read_csv(history_file)
+        df_combined = pd.concat([df_hist, df_new]).drop_duplicates(subset=["Datum","Valuta"], keep="last")
+    else:
+        df_combined = df_new
+
+    df_combined.to_csv(history_file, index=False, encoding="utf-8-sig")
+
+    print(f"Wrote {filename} and updated {history_file} with {len(df_new)} new rows.")
 
 if __name__ == "__main__":
     main()
