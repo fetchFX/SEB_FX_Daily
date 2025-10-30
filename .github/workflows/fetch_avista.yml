@@ -29,14 +29,19 @@ jobs:
           SEB_API_KEY: ${{ secrets.SEB_API_KEY }}
         run: python scripts/fetch_seb_avista.py
 
-      - name: Commit & push CSV
+            - name: Commit & push CSV
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add avista_rates_*.csv
-          if ! git diff --cached --quiet; then
-            git commit -m "Update Avista CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
-            git push
+          if ls SEB_Avista_*.csv 1> /dev/null 2>&1; then
+            git add SEB_Avista_*.csv SEB_Avista_History.csv
+            if ! git diff --cached --quiet; then
+              git commit -m "Update SEB Avista CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+              git push
+            else
+              echo "No changes to commit."
+            fi
           else
-            echo "No changes to commit."
+            echo "No SEB Avista CSV found — nothing to commit."
           fi
+
