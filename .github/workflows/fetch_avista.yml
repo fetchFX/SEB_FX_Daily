@@ -27,8 +27,6 @@ jobs:
           pip install pandas requests beautifulsoup4
 
       - name: Run SEB Avista Scraper
-        env:
-          SEB_API_KEY: ${{ secrets.SEB_API_KEY }}
         run: |
           python scripts/fetch_seb_avista.py
 
