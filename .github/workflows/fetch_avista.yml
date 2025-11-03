@@ -34,11 +34,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Commita bara om fil finns
           if ls SEB_Avista_*.csv 1> /dev/null 2>&1; then
             git add SEB_Avista_*.csv SEB_Avista_History.csv
             if ! git diff --cached --quiet; then
               git commit -m "Update SEB Avista CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+              # 🔽 Lägg till dessa två rader för att hämta senaste ändringar
+              git fetch origin main
+              git pull --rebase origin main
               git push
             else
               echo "No changes to commit."
