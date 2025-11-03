@@ -27,6 +27,7 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Run SEB Avista (headless)
+        working-directory: ${{ github.workspace }}/SEB_FX_Daily
         run: |
           python scripts/fetch_seb_avista.py
 
