@@ -1,20 +1,16 @@
-# Wake up schedule 2025-10-30
-
 name: Fetch SEB FX rates (daily)
 
 on:
   schedule:
-    # Vintertid (okt–mar): 10:15 UTC = 11:15 Stockholm
-    - cron: "15 10 * 10-12,1-3 1-5"
-    # Sommartid (apr–sep): 09:15 UTC = 11:15 Stockholm
     - cron: "15 9 * 4-9 1-5"
-  workflow_dispatch: # så du kan starta manuellt vid test
+    - cron: "15 10 * 10-12,1-3 1-5"
+  workflow_dispatch:
 
 jobs:
   fetch:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -34,23 +30,15 @@ jobs:
         run: |
           python scripts/fetch_seb_fx.py
 
-       - name: Commit & push CSV
+      - name: Commit & push CSV
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Lägg bara till filer som faktiskt finns (ändra filmönster efter behov)
-          git add *.csv || true
-
-          # Om något ändrats, committa och pusha
+          git add fx_rates_sek_*.csv fx_rates_sek.csv || true
           if ! git diff --cached --quiet; then
-            git commit -m "Auto-update CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
-
-            # 🔽 Hämta senaste ändringar och rebase ovanpå för att undvika 'fetch first'
+            git commit -m "Auto-update FX CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
             git fetch origin main
             git pull --rebase origin main
-
-            # 🔽 Försök pusha upp till tre gånger (om race condition skulle uppstå ändå)
             n=0
             until [ "$n" -ge 3 ]
             do
