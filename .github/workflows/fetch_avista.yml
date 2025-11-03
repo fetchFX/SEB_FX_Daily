@@ -30,21 +30,32 @@ jobs:
         run: |
           python scripts/fetch_seb_avista.py
 
-      - name: Commit & push CSV
+       - name: Commit & push CSV
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ls SEB_Avista_*.csv 1> /dev/null 2>&1; then
-            git add SEB_Avista_*.csv SEB_Avista_History.csv
-            if ! git diff --cached --quiet; then
-              git commit -m "Update SEB Avista CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
-              # 🔽 Lägg till dessa två rader för att hämta senaste ändringar
-              git fetch origin main
+
+          # Lägg bara till filer som faktiskt finns (ändra filmönster efter behov)
+          git add *.csv || true
+
+          # Om något ändrats, committa och pusha
+          if ! git diff --cached --quiet; then
+            git commit -m "Auto-update CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+
+            # 🔽 Hämta senaste ändringar och rebase ovanpå för att undvika 'fetch first'
+            git fetch origin main
+            git pull --rebase origin main
+
+            # 🔽 Försök pusha upp till tre gånger (om race condition skulle uppstå ändå)
+            n=0
+            until [ "$n" -ge 3 ]
+            do
+              git push && break
+              echo "Push failed, retrying in 5s..."
+              sleep 5
               git pull --rebase origin main
-              git push
-            else
-              echo "No changes to commit."
-            fi
+              n=$((n+1))
+            done
           else
-            echo "No SEB Avista CSV found — nothing to commit."
+            echo "No changes to commit."
           fi
