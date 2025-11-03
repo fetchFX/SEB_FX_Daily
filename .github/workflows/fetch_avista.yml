@@ -2,7 +2,6 @@ name: Fetch SEB Avista (daily)
 
 on:
   schedule:
-    # Vardagar 11:15 Stockholm (10:15 UTC vintertid)
     - cron: "15 10 * * 1-5"
   workflow_dispatch:
 
@@ -24,29 +23,22 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas requests beautifulsoup4
+          pip install pandas playwright
+          python -m playwright install --with-deps chromium
 
-      - name: Run SEB Avista Scraper
+      - name: Run SEB Avista (headless)
         run: |
-          python scripts/fetch_seb_avista.py
+          python scripts/fetch_seb_avista_headless.py
 
-       - name: Commit & push CSV
+      - name: Commit & push CSV
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Lägg bara till filer som faktiskt finns (ändra filmönster efter behov)
-          git add *.csv || true
-
-          # Om något ändrats, committa och pusha
+          git add SEB_Avista_*.csv || true
           if ! git diff --cached --quiet; then
-            git commit -m "Auto-update CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
-
-            # 🔽 Hämta senaste ändringar och rebase ovanpå för att undvika 'fetch first'
+            git commit -m "Auto-update Avista CSV ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
             git fetch origin main
             git pull --rebase origin main
-
-            # 🔽 Försök pusha upp till tre gånger (om race condition skulle uppstå ändå)
             n=0
             until [ "$n" -ge 3 ]
             do
