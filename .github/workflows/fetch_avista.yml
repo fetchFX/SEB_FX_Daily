@@ -28,7 +28,7 @@ jobs:
 
       - name: Run SEB Avista (headless)
         run: |
-          python scripts/fetch_seb_avista_headless.py
+          python scripts/fetch_seb_avista.py
 
       - name: Commit & push CSV
         run: |
